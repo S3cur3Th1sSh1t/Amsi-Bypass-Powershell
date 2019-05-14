@@ -1,7 +1,7 @@
 # Amsi-Bypass-Powershell
 This repo contains some Amsi Bypass methods i found on different Blog Posts.
 
-## 1) Patching amsi.dll AmsiScanBuffer by https://rastamouse.me/2018/12/amsiscanbuffer-bypass-part-4/
+## 1) Patching amsi.dll AmsiScanBuffer by rasta-mouse
 ```
 $Win32 = @"
 
