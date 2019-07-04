@@ -1,6 +1,8 @@
 # Amsi-Bypass-Powershell
 This repo contains some Amsi Bypass methods i found on different Blog Posts.
 
+Some of the more well known Bypasses are detected by AMSI itself. So you have to obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working.
+
 ## 1) Patching amsi.dll AmsiScanBuffer by rasta-mouse
 ```
 $Win32 = @"
