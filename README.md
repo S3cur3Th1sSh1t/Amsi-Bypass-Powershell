@@ -9,7 +9,7 @@ Some of the more well known Bypasses are detected by AMSI itself. So you have to
 4. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
 5. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
 6. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
-7. [Same as 4 but integer Bytes instead of Base64](#Same-as-4-but-integer-Bytes-instead-of-Base64 "Goto Same-as-4-but-integer-Bytes-instead-of-Base64")
+7. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
 8. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
 9. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
 10. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
@@ -177,7 +177,7 @@ function Bypass-AMSI
     [Bypass.AMSI]::Patch()
 }
 ```
-# Same as 4 but integer Bytes instead of Base64 #
+# Same as 6 but integer Bytes instead of Base64 #
 
 ```
 function MyPatch{
