@@ -16,7 +16,7 @@ Some of the more well known Bypasses are detected by AMSI itself. So you have to
 11. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
 12. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
 13. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
-14. [Patch .NET 4.8](#Adam-Chester-Patch"Goto Adam-Chester-Patch")
+14. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
 
 # Patching amsi.dll AmsiScanBuffer by rasta-mouse #
 ```
