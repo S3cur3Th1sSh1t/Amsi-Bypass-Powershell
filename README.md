@@ -1,3 +1,7 @@
+# Sponsored by
+
+<img src="https://github.com/S3cur3Th1sSh1t/Amsi-Bypass-Powershell/raw/master/images/happy_alp.png" width="300" height="300">
+
 # Amsi-Bypass-Powershell #
 This repo contains some Antimalware Scan Interface (AMSI) bypass / avoidance methods i found on different Blog Posts.
 
