@@ -12,7 +12,7 @@ Most of the scripts are detected by AMSI itself. So you have to find the [trigge
 1. [Patch the provider’s DLL of Microsoft MpOav.dll](#Patch-the-providers-DLL-of-Microsoft-MpOav.dll "Goto Patch-the-providers-DLL-of-Microsoft-MpOav.dll")
 2. [Scanning Interception and Provider function patching](#Scanning-Interception "Goto Scanning-Interception")  
 3. [Patching amsi.dll AmsiScanBuffer by rasta-mouse](#Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse "Goto Patching-amsi.dll-AmsiScanBuffer-by-rasta-mouse")
-4. [Patching amsi.dll AmsiOpenSession](#Patching-amsi.dll-AmsiOpenSession)
+4. [Patching amsi.dll AmsiOpenSession](#Patching-amsi.dll-AmsiOpenSession "Goto Patching-amsi.dll-AmsiOpenSession")
 5. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
 6. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
 7. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
