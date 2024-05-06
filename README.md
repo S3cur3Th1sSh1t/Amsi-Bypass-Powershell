@@ -27,7 +27,7 @@ Most of the scripts are detected by AMSI itself. So you have to find the [trigge
 17. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
 18. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
 19. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
-20. [Patching the AmsiScanBuffer address in System.Management.Automation.dll(#Patching-AmsiScanBuffer-Address "Goto Patching-AmsiScanBuffer-Address")]
+20. [Patching the AmsiScanBuffer address in System.Management.Automation.dll](#Patching-AmsiScanBuffer-Address "Goto Patching-AmsiScanBuffer-Address")
 
 # Using Hardware Breakpoints
 - Original technique from @_EthicalChaos_ (https://twitter.com/_EthicalChaos_)
